@@ -3,7 +3,7 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.22.1)
 
 # Creates and names a library, sets it as either STATIC or SHARED, and provides
 # the relative paths to its source code. You can define multiple libraries, and
@@ -29,89 +29,35 @@ set(CMAKE_SHARED_LINKER_FLAGS
         "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -Wl,-z,nocopyreloc")
 
 add_library(
-        # Sets the name of the library.
         Native
-        # Sets the library as a shared library.
         SHARED
-        # Provides a relative path to your source file(s).
         ${SOURCES})
 
 find_library(
-        # Sets the name of the path variable.
         log-lib
-        # Specifies the name of the NDK library that you want CMake to locate.
         log)
 
-add_library(
-        # Sets the name of the library.
-        paddle_light_api_shared
-        # Sets the library as a shared library.
-        SHARED
-        # Provides a relative path to your source file(s).
-        IMPORTED)
+# 使用动态库 (如果存在)
+set(PADDLE_LITE_LIB "${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libpaddle_light_api_shared.so")
+set(PADDLE_LITE_LIB_STATIC "${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libpaddle_api_light_bundled.a")
 
-set_target_properties(
-        # Specifies the target library.
-        paddle_light_api_shared
-        # Specifies the parameter you want to define.
-        PROPERTIES
-        IMPORTED_LOCATION
-        ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libpaddle_light_api_shared.so
-        # Provides the path to the library you want to import.
-)
-
-
-# Specifies libraries CMake should link to your target library. You can link
-# multiple libraries, such as libraries you define in this build script,
-# prebuilt third-party libraries, or system libraries.
+if(EXISTS ${PADDLE_LITE_LIB})
+    add_library(paddle_light_api_shared SHARED IMPORTED)
+    set_target_properties(paddle_light_api_shared PROPERTIES IMPORTED_LOCATION ${PADDLE_LITE_LIB})
+    set(PADDLE_LITE_LIBRARIES paddle_light_api_shared)
+elseif(EXISTS ${PADDLE_LITE_LIB_STATIC})
+    # 使用静态库
+    set(PADDLE_LITE_LIBRARIES "${PADDLE_LITE_LIB_STATIC}")
+else()
+    message(FATAL_ERROR "Paddle Lite library not found in ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/")
+endif()
 
 target_link_libraries(
-        # Specifies the target library.
         Native
-        paddle_light_api_shared
+        ${PADDLE_LITE_LIBRARIES}
         ${OpenCV_LIBS}
         GLESv2
         EGL
         jnigraphics
         ${log-lib}
 )
-
-add_custom_command(
-        TARGET Native
-        POST_BUILD
-        COMMAND
-        ${CMAKE_COMMAND} -E copy
-        ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libc++_shared.so
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libc++_shared.so)
-
-add_custom_command(
-        TARGET Native
-        POST_BUILD
-        COMMAND
-        ${CMAKE_COMMAND} -E copy
-        ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libpaddle_light_api_shared.so
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libpaddle_light_api_shared.so)
-
-add_custom_command(
-        TARGET Native
-        POST_BUILD
-        COMMAND
-        ${CMAKE_COMMAND} -E copy
-        ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libhiai.so
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libhiai.so)
-
-add_custom_command(
-        TARGET Native
-        POST_BUILD
-        COMMAND
-        ${CMAKE_COMMAND} -E copy
-        ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libhiai_ir.so
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libhiai_ir.so)
-
-add_custom_command(
-        TARGET Native
-        POST_BUILD
-        COMMAND
-        ${CMAKE_COMMAND} -E copy
-        ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libhiai_ir_build.so
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libhiai_ir_build.so)

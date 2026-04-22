@@ -23,22 +23,23 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v2
     
-    - name: Setup NDK
-      run: |
-        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653"
-    
     - name: Set NDK version in local.properties
       run: |
-        echo "ndk.dir=$ANDROID_HOME/ndk/25.2.9519653" >> local.properties
         echo "sdk.dir=$ANDROID_HOME" >> local.properties
+        echo "ndk.dir=$ANDROID_NDK_HOME" >> local.properties
+        cat local.properties
     
     - name: Grant execute permission
       run: chmod +x gradlew
     
+    - name: Clean and Download Dependencies
+      run: ./gradlew clean downloadAndExtractArchives --no-daemon -i
+    
     - name: Build with Gradle
-      run: ./gradlew assembleRelease --no-daemon
+      run: ./gradlew assembleRelease --no-daemon -i 2>&1 | tail -100
     
     - name: Upload APK
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: release-apk
