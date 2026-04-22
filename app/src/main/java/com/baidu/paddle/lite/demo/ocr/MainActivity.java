@@ -312,16 +312,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                finish();
-                break;
-            case R.id.settings:
-                if (requestAllPermissions()) {
-                    // Make sure we have SDCard r&w permissions to load model from SDCard
-                    onSettingsClicked();
-                }
-                break;
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
+            finish();
+        } else if (id == R.id.settings) {
+            if (requestAllPermissions()) {
+                // Make sure we have SDCard r&w permissions to load model from SDCard
+                onSettingsClicked();
+            }
         }
         return super.onOptionsItemSelected(item);
     }
