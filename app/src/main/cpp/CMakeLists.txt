@@ -20,7 +20,7 @@ message(STATUS "OpenCV libraries: ${OpenCV_LIBS}")
 include_directories(${OpenCV_INCLUDE_DIRS})
 aux_source_directory(. SOURCES)
 set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -ffast-math -Ofast -Os"
+        "${CMAKE_CXX_FLAGS} -ffast-math -Ofast -Os -fopenmp"
         )
 set(CMAKE_CXX_FLAGS
         "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -fdata-sections -ffunction-sections"
@@ -47,6 +47,23 @@ else()
     message(FATAL_ERROR "Paddle Lite static library not found in ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/")
 endif()
 
+# Find OpenMP (needed by Paddle Lite static lib)
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    message(STATUS "OpenMP found: ${OpenMP_CXX_FLAGS}")
+else()
+    # Fallback: link against the NDK OpenMP library directly
+    set(OpenMP_CXX_FLAGS "-fopenmp")
+    find_library(OpenMP_LIB NAMES omp gomp HINTS
+        "${ANDROID_NDK}/sources/cpufeatures"
+        "${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/${ANDROID_PLATFORM_LEVEL}"
+    )
+    if(NOT OpenMP_LIB)
+        # Try to find libomp.so in NDK
+        find_library(OpenMP_LIB omp)
+    endif()
+endif()
+
 target_link_libraries(
         Native
         ${PADDLE_LITE_LIBRARIES}
@@ -55,4 +72,6 @@ target_link_libraries(
         EGL
         jnigraphics
         ${log-lib}
+        -fopenmp
+        -lm
 )
