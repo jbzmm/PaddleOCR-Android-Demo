@@ -1,9 +1,7 @@
 import java.security.MessageDigest
 
-plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
-}
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
     namespace 'com.baidu.paddle.lite.demo.ocr'
