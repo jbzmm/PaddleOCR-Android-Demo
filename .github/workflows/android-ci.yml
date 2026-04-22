@@ -23,10 +23,23 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v2
     
-    - name: Set NDK version in local.properties
+    - name: Install NDK
       run: |
-        echo "sdk.dir=$ANDROID_HOME" >> local.properties
-        echo "ndk.dir=$ANDROID_NDK_HOME" >> local.properties
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.4751853" 2>/dev/null || \
+        yes | $ANDROID_HOME/tools/bin/sdkmanager --install "ndk;25.2.4751853" 2>/dev/null || \
+        yes | $ANDROID_HOME/platform-tools/../cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.4751853" 2>/dev/null || \
+        echo "Trying alternative NDK installation..."
+        # Find NDK location
+        NDK_DIR=$(find $ANDROID_HOME -name "ndk*" -type d 2>/dev/null | head -1)
+        if [ -z "$NDK_DIR" ]; then
+          echo "NDK not found, installing via apt..."
+          sudo apt-get update && sudo apt-get install -y android-ndk
+          NDK_DIR="/usr/lib/android-ndk"
+        fi
+        echo "NDK_DIR=$NDK_DIR"
+        echo "NDK version: $(ls $NDK_DIR 2>/dev/null || echo 'not found')"
+        echo "sdk.dir=$ANDROID_HOME" > local.properties
+        echo "ndk.dir=$NDK_DIR" >> local.properties
         cat local.properties
     
     - name: Grant execute permission
