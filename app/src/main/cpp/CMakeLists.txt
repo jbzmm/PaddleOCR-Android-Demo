@@ -37,19 +37,14 @@ find_library(
         log-lib
         log)
 
-# 使用动态库 (如果存在)
-set(PADDLE_LITE_LIB "${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libpaddle_light_api_shared.so")
+# 使用静态库（动态库有符号表问题）
 set(PADDLE_LITE_LIB_STATIC "${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/libpaddle_api_light_bundled.a")
 
-if(EXISTS ${PADDLE_LITE_LIB})
-    add_library(paddle_light_api_shared SHARED IMPORTED)
-    set_target_properties(paddle_light_api_shared PROPERTIES IMPORTED_LOCATION ${PADDLE_LITE_LIB})
-    set(PADDLE_LITE_LIBRARIES paddle_light_api_shared)
-elseif(EXISTS ${PADDLE_LITE_LIB_STATIC})
+if(EXISTS ${PADDLE_LITE_LIB_STATIC})
     # 使用静态库
     set(PADDLE_LITE_LIBRARIES "${PADDLE_LITE_LIB_STATIC}")
 else()
-    message(FATAL_ERROR "Paddle Lite library not found in ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/")
+    message(FATAL_ERROR "Paddle Lite static library not found in ${PaddleLite_DIR}/cxx/libs/${ANDROID_ABI}/")
 endif()
 
 target_link_libraries(
