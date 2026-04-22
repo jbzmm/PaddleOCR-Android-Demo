@@ -1,0 +1,45 @@
+name: Android CI with NDK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+    
+    - name: Setup NDK
+      run: |
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.2.9519653"
+    
+    - name: Set NDK version in local.properties
+      run: |
+        echo "ndk.dir=$ANDROID_HOME/ndk/25.2.9519653" >> local.properties
+        echo "sdk.dir=$ANDROID_HOME" >> local.properties
+    
+    - name: Grant execute permission
+      run: chmod +x gradlew
+    
+    - name: Build with Gradle
+      run: ./gradlew assembleRelease --no-daemon
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-apk
+        path: app/build/outputs/apk/release/*.apk
